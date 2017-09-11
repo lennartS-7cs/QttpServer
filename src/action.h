@@ -51,19 +51,19 @@ class QTTPSHARED_EXPORT Action
     virtual const char* getName() const = 0;
 
     //! The summary about this action - used for SwaggerUI.
-    virtual const char* getSummary() const;
+    virtual std::map<qttp::HttpPath, const char*> getSummaries() const;
 
     //! The description about this action - used for SwaggerUI.
-    virtual const char* getDescription() const;
+    virtual std::map<qttp::HttpPath, const char*> getDescriptions() const;
 
     //! The tags help SwaggerUI organize and group actions, like hashtags/labels.
-    virtual QStringList getTags() const;
+    virtual std::map<qttp::HttpPath, QStringList> getTags() const;
 
     //! The inputs help SwaggerUI include parameters.
-    virtual std::vector<Input> getInputs() const;
+    virtual std::map<qttp::HttpPath, std::vector<Input>> getInputs() const;
 
     //! The possible responses of this action - used for SwaggerUI.
-    virtual std::map<qttp::HttpStatus, QString> getResponses() const;
+    virtual std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> getResponses() const;
 
     bool registerRoute(HttpMethod method, const QString& path, Visibility visibility = Visibility::Show);
     bool registerRoute(const qttp::HttpPath& path, Visibility visibility = Visibility::Show);
@@ -86,8 +86,8 @@ QTTP_PROTECTED:
 QTTP_PRIVATE:
 
     static const std::set<qttp::HttpPath> EMPTY_ROUTES;
-    static const std::vector<Input> EMPTY_INPUTS;
-    static const QStringList EMPTY_STRING_LIST;
+    static const std::map<qttp::HttpPath, std::vector<Input>> EMPTY_INPUTS;
+    static const std::map<qttp::HttpPath, QStringList> EMPTY_TAG_LIST;
     static const std::vector<QStringPair> EMPTY_STRINGPAIR_LIST;
 };
 
@@ -111,20 +111,19 @@ class QTTPSHARED_EXPORT SimpleAction : public Action
     void setRoutes(const std::set<qttp::HttpPath>& routes);
     std::set<qttp::HttpPath> getRoutes() const;
 
-    void setSummary(const char* summary);
-    const char* getSummary() const;
+    void setSummaries(std::map<qttp::HttpPath, const char*> summaries);
+    std::map<qttp::HttpPath, const char*> getSummaries() const;
 
-    void setDescription(const char* description);
-    const char* getDescription() const;
+    void setDescriptions(std::map<qttp::HttpPath, const char*> descriptions);
+    std::map<qttp::HttpPath, const char*> getDescriptions() const;
 
-    void setTags(const QStringList& tags);
-    QStringList getTags() const;
+    void setTags(const std::map<qttp::HttpPath, QStringList>& tags);
+    std::map<qttp::HttpPath, QStringList> getTags() const;
+    void setInputs(const std::map<qttp::HttpPath, std::vector<Input>>& inputs);
+    std::map<qttp::HttpPath, std::vector<Input>> getInputs() const;
 
-    void setInputs(const std::vector<Input>& inputs);
-    std::vector<Input> getInputs() const;
-
-    void setResponses(const std::map<qttp::HttpStatus, QString>& responses);
-    std::map<qttp::HttpStatus, QString> getResponses() const;
+    void setResponses(const std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> responses);
+    std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> getResponses() const;
 
 QTTP_PROTECTED:
 
@@ -135,11 +134,11 @@ QTTP_PRIVATE:
     std::function<void(qttp::HttpData&)> m_Callback;
     QByteArray m_Name;
     std::set<qttp::HttpPath> m_Routes;
-    QByteArray m_Summary;
-    QByteArray m_Description;
-    QStringList m_Tags;
-    std::vector<Input> m_Inputs;
-    std::map<qttp::HttpStatus, QString> m_Responses;
+    std::map<qttp::HttpPath, QByteArray> m_Summaries;
+    std::map<qttp::HttpPath, QByteArray> m_Descriptions;
+    std::map<qttp::HttpPath, QStringList> m_Tags;
+    std::map<qttp::HttpPath, std::vector<Input>> m_Inputs;
+    std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> m_Responses;
     std::vector<QStringPair> m_Headers;
 };
 

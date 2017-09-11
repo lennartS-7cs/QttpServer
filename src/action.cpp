@@ -5,8 +5,8 @@ using namespace std;
 using namespace qttp;
 
 const std::set<qttp::HttpPath> Action::EMPTY_ROUTES;
-const std::vector<Input> Action::EMPTY_INPUTS;
-const QStringList Action::EMPTY_STRING_LIST;
+const std::map<qttp::HttpPath, std::vector<Input>> Action::EMPTY_INPUTS;
+const std::map<qttp::HttpPath, QStringList> Action::EMPTY_TAG_LIST;
 const std::vector<QStringPair> Action::EMPTY_STRINGPAIR_LIST;
 
 Action::Action()
@@ -119,27 +119,27 @@ set<qttp::HttpPath> Action::getRoutes() const
   return EMPTY_ROUTES;
 }
 
-const char* Action::getSummary() const
+std::map<qttp::HttpPath, const char*> Action::getSummaries() const
 {
-  return "";
+  return {};
 }
 
-const char* Action::getDescription() const
+std::map<qttp::HttpPath, const char*> Action::getDescriptions() const
 {
-  return "";
+  return {};
 }
 
-QStringList Action::getTags() const
+std::map<qttp::HttpPath, QStringList> Action::getTags() const
 {
-  return EMPTY_STRING_LIST;
+  return EMPTY_TAG_LIST;
 }
 
-std::vector<Input> Action::getInputs() const
+std::map<qttp::HttpPath, std::vector<Input>> Action::getInputs() const
 {
   return EMPTY_INPUTS;
 }
 
-std::map<qttp::HttpStatus, QString> Action::getResponses() const
+std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> Action::getResponses() const
 {
   return {};
 }
@@ -184,10 +184,11 @@ SimpleAction::SimpleAction(std::function<void(qttp::HttpData&)> callback) :
   m_Callback(callback),
   m_Name(),
   m_Routes(),
-  m_Summary(),
-  m_Description(),
+  m_Summaries(),
+  m_Descriptions(),
   m_Tags(),
   m_Inputs(),
+  m_Responses(),
   m_Headers()
 {
 }
@@ -216,52 +217,70 @@ const char* SimpleAction::getName() const
   return m_Name.constData();
 }
 
-void SimpleAction::setSummary(const char* summary)
+void SimpleAction::setSummaries(std::map<qttp::HttpPath, const char*> summaries)
 {
-  m_Summary = summary;
+  m_Summaries.clear();
+  for(auto part : summaries)
+  {
+    m_Summaries.insert({ part.first, QByteArray(part.second) });
+  }
 }
 
-const char* SimpleAction::getSummary() const
+std::map<qttp::HttpPath, const char*> SimpleAction::getSummaries() const
 {
-  return m_Summary.constData();
+  std::map<qttp::HttpPath, const char*> result;
+  for(auto part : m_Summaries)
+  {
+    result.insert({ part.first, part.second.constData() });
+  }
+  return result;
 }
 
-void SimpleAction::setDescription(const char* description)
+void SimpleAction::setDescriptions(std::map<qttp::HttpPath, const char*> descriptions)
 {
-  m_Description = description;
+  m_Descriptions.clear();
+  for(auto part : descriptions)
+  {
+    m_Descriptions.insert({ part.first, QByteArray(part.second) });
+  }
 }
 
-const char* SimpleAction::getDescription() const
+std::map<qttp::HttpPath, const char*> SimpleAction::getDescriptions() const
 {
-  return m_Description.constData();
+  std::map<qttp::HttpPath, const char*> result;
+  for(auto part : m_Descriptions)
+  {
+    result.insert({ part.first, part.second.constData() });
+  }
+  return result;
 }
 
-void SimpleAction::setTags(const QStringList& tags)
+void SimpleAction::setTags(const std::map<qttp::HttpPath, QStringList>& tags)
 {
   m_Tags = tags;
 }
 
-QStringList SimpleAction::getTags() const
+std::map<qttp::HttpPath, QStringList> SimpleAction::getTags() const
 {
   return m_Tags;
 }
 
-void SimpleAction::setInputs(const std::vector<Input>& inputs)
+void SimpleAction::setInputs(const std::map<qttp::HttpPath, std::vector<Input>>& inputs)
 {
-  m_Inputs.insert(m_Inputs.end(), inputs.begin(), inputs.end());
+  m_Inputs.insert(inputs.begin(), inputs.end());
 }
 
-std::vector<Input> SimpleAction::getInputs() const
+std::map<qttp::HttpPath, std::vector<Input>> SimpleAction::getInputs() const
 {
   return m_Inputs;
 }
 
-void SimpleAction::setResponses(const std::map<qttp::HttpStatus, QString>& responses)
+void SimpleAction::setResponses(std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> responses)
 {
   m_Responses.insert(responses.begin(), responses.end());
 }
 
-std::map<qttp::HttpStatus, QString> SimpleAction::getResponses() const
+std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> SimpleAction::getResponses() const
 {
   return m_Responses;
 }

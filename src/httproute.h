@@ -16,8 +16,8 @@ class QTTPSHARED_EXPORT Input
     Input();
     Input(Input&& from);
     Input(const Input& from);
-    Input(const QString& name, const std::set<qttp::HttpPath>& paths = std::set<qttp::HttpPath>());
-    Input(const QString& name, const QString& desc, const QStringList& values, const std::set<qttp::HttpPath>& paths = std::set<qttp::HttpPath>());
+    Input(const QString& name);
+    Input(const QString& name, const QString& desc, const QStringList& values);
 
     Input& operator=(const Input& from);
 
@@ -38,25 +38,22 @@ class QTTPSHARED_EXPORT Input
 
     //! Primarily used to indicate if this route should be listed publicly.
     Visibility visibility;
-
-    //! This Input applies only to the specified paths/routes
-    std::set<qttp::HttpPath> paths;
 };
 
 class QTTPSHARED_EXPORT RequiredInput : public Input
 {
   public:
     RequiredInput();
-    RequiredInput(const QString&name, const std::set<qttp::HttpPath>& paths = std::set<qttp::HttpPath>());
-    RequiredInput(const QString& name, const QString& desc, const QStringList& values, const std::set<qttp::HttpPath>& paths = std::set<qttp::HttpPath>());
+    RequiredInput(const QString&name);
+    RequiredInput(const QString& name, const QString& desc, const QStringList& values);
 };
 
 class QTTPSHARED_EXPORT HeaderInput : public Input
 {
   public:
     HeaderInput();
-    HeaderInput(const QString&name, const std::set<qttp::HttpPath>& paths = std::set<qttp::HttpPath>());
-    HeaderInput(const QString& name, const QString& desc, const QStringList& values, const std::set<qttp::HttpPath>& paths = std::set<qttp::HttpPath>());
+    HeaderInput(const QString&name);
+    HeaderInput(const QString& name, const QString& desc, const QStringList& values);
 };
 
 /**

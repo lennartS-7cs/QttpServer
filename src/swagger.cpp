@@ -80,69 +80,31 @@ void Swagger::initialize()
 
   for(const auto & action : actions)
   {
-    QJsonObject properties;
-    QJsonArray required;
-    QJsonArray tags = QJsonArray::fromStringList(action->getTags());
-
-    QJsonObject responses;
-    for(auto response : action->getResponses())
-    {
-      responses.insert(QString::number(static_cast<int>(response.first)), QJsonObject {
-        { "description", response.second }
-      });
-    }
-
     QString actionName = action->getName();
-    const vector<Input> & inputs = action->getInputs();
 
-    for(const Input &input : inputs)
-    {
-      if(input.visibility == Visibility::Hide)
+    // First we get and correct, if needed,  the Swagger method
+    // return values from the action
+    auto prependSlashToMapKeys = [] (auto inputMap, auto &outputMap) {
+      for(const auto input : inputMap)
       {
-        // Obviously let's skip this if this is not meant to be publicly listed.
-        continue;
-      }
-
-      QJsonArray enums;
-      for(int i = 0; i < input.values.size(); ++i)
-      {
-        enums.append(input.values.at(i));
-      }
-
-      QString paramKey = "action_" + actionName + version + "_" + input.name;
-
-      parameters[paramKey] = QJsonObject {
-        { "name", input.name },
-        { "in", input.paramType },
-        { "type", input.dataType },
-        { "description", input.description },
-        { "required", input.isRequired },
-        { "enum", enums.size() == 0 ? QJsonValue() : enums }
-      };
-
-      if(input.isRequired)
-      {
-        required.append(input.name);
-      }
-
-      for(HttpPath i : input.paths)
-      {
-        auto iter = inputLookup.find(i);
-        if(iter == inputLookup.end())
+        auto key = input.first;
+        if(!key.second.startsWith("/"))
         {
-          inputLookup.insert({i, QVector<QJsonObject>()});
+          key.second.prepend("/");
         }
-        inputLookup[i].append(QJsonObject {
-          { "$ref", "#/parameters/" + paramKey }
-        });
+        outputMap.insert({ key, input.second });
       }
-
-      properties[input.name] = QJsonObject { { "type", "string" } };
-    }
-
-    definitions.insert(actionName + version, QJsonValue(QJsonObject {
-      { "properties", properties }
-    }));
+    };
+    std::map<qttp::HttpPath, const char*> actionSummaries;
+    prependSlashToMapKeys(action->getSummaries(), actionSummaries);
+    std::map<qttp::HttpPath, const char*> actionDescriptions;
+    prependSlashToMapKeys(action->getDescriptions(), actionDescriptions);
+    std::map<qttp::HttpPath, QStringList> actionTags;
+    prependSlashToMapKeys(action->getTags(), actionTags);
+    std::map<qttp::HttpPath, std::vector<qttp::Input>> actionInputs;
+    prependSlashToMapKeys(action->getInputs(), actionInputs);
+    std::map<qttp::HttpPath, std::map<qttp::HttpStatus, QString>> actionResponses;
+    prependSlashToMapKeys(action->getResponses(), actionResponses);
 
     for(auto httpMethod : Global::HTTP_METHODS)
     {
@@ -164,24 +126,61 @@ void Swagger::initialize()
           continue;
         }
 
-        // TODO FIXME
-        // Unfortunately was unable to just do a QHash::find() but might be
-        // able to revisit and fix since this is silly and expensive.
-
-        for(auto iter = inputLookup.begin(); iter != inputLookup.end(); ++iter)
+        HttpPath currentHttpPath = { route.method, route.path };
+        QJsonObject properties;
+        QJsonArray required;
+        if(actionInputs.find(currentHttpPath) != actionInputs.end())
         {
-          const HttpPath& key = iter->first;
-          const QVector<QJsonObject>& value = iter->second;
-          QString routePath = route.path.startsWith('/') ? route.path.mid(1) : route.path;
-
-          if((key.first == httpMethod || key.first == qttp::HttpMethod::ALL) &&
-             key.second == routePath)
+          for(const Input &input : actionInputs[currentHttpPath])
           {
-            for(const QJsonObject & i : value)
+            if(input.visibility == Visibility::Hide)
             {
-              routeParameters.append(i);
+              // Obviously let's skip this if this is not meant to be publicly listed.
+              continue;
             }
+
+            QJsonArray enums;
+            for(int i = 0; i < input.values.size(); ++i)
+            {
+              enums.append(input.values.at(i));
+            }
+
+            QString paramKey = "action_" + actionName + version + "_" + input.name;
+
+            parameters[paramKey] = QJsonObject {
+              { "name", input.name },
+              { "in", input.paramType },
+              { "type", input.dataType },
+              { "description", input.description },
+              { "required", input.isRequired },
+              { "enum", enums.size() == 0 ? QJsonValue() : enums }
+            };
+
+            if(input.isRequired)
+            {
+              required.append(input.name);
+            }
+
+            auto iter = inputLookup.find(currentHttpPath);
+            if(iter == inputLookup.end())
+            {
+              inputLookup.insert({currentHttpPath, QVector<QJsonObject>()});
+            }
+            inputLookup[currentHttpPath].append(QJsonObject {
+              { "$ref", "#/parameters/" + paramKey }
+            });
+
+            properties[input.name] = QJsonObject { { "type", "string" } };
           }
+        }
+
+        definitions.insert(actionName + version, QJsonValue(QJsonObject {
+          { "properties", properties }
+        }));
+
+        for(const QJsonObject & i : inputLookup[currentHttpPath])
+        {
+          routeParameters.append(i);
         }
 
         if(httpMethod == HttpMethod::POST ||
@@ -218,10 +217,24 @@ void Swagger::initialize()
         {
           paths.insert(routePath, QJsonObject());
         }
+
+        QJsonObject responses;
+        if(actionResponses.find(currentHttpPath) != actionResponses.end())
+        {
+          for(auto response : actionResponses[currentHttpPath])
+          {
+            responses.insert(QString::number(static_cast<int>(response.first)), QJsonObject {
+              { "description", response.second }
+            });
+          }
+        }
+
+        QJsonArray tags = QJsonArray::fromStringList(actionTags[currentHttpPath]);
+
         QJsonObject pathRoute = paths[routePath].toObject();
         pathRoute.insert(Utils::toStringLower(httpMethod), QJsonObject {
-          { "summary", action->getSummary() },
-          { "description", action->getDescription() },
+          { "summary", actionSummaries[currentHttpPath] },
+          { "description", actionDescriptions[currentHttpPath] },
           { "operationId", routePath },
           { "parameters", routeParameters },
           { "tags", tags },

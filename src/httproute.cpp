@@ -9,8 +9,7 @@ Input::Input() :
   paramType("query"),
   dataType("string"),
   values(),
-  visibility(Visibility::Show),
-  paths()
+  visibility(Visibility::Show)
 {
 }
 
@@ -21,8 +20,7 @@ Input::Input(Input&& from) :
   paramType(std::move(from.paramType)),
   dataType(std::move(from.dataType)),
   values(std::move(from.values)),
-  visibility(Visibility::Show),
-  paths(std::move(from.paths))
+  visibility(Visibility::Show)
 {
 }
 
@@ -35,30 +33,27 @@ Input::Input(const Input& from)
   dataType = from.dataType;
   values = from.values;
   visibility = from.visibility;
-  paths = from.paths;
 }
 
-Input::Input(const QString& inputname, const std::set<qttp::HttpPath>& path) :
+Input::Input(const QString& inputname) :
   name(inputname),
   description(),
   isRequired(false),
   paramType("query"),
   dataType("string"),
   values(),
-  visibility(Visibility::Show),
-  paths(path)
+  visibility(Visibility::Show)
 {
 }
 
-Input::Input(const QString& inputname, const QString& desc, const QStringList& vals, const std::set<qttp::HttpPath>& path) :
+Input::Input(const QString& inputname, const QString& desc, const QStringList &vals) :
   name(inputname),
   description(desc),
   isRequired(false),
   paramType("query"),
   dataType("string"),
   values(vals),
-  visibility(Visibility::Show),
-  paths(path)
+  visibility(Visibility::Show)
 {
 }
 
@@ -71,7 +66,6 @@ Input& Input::operator=(const Input& from)
   dataType = from.dataType;
   values = from.values;
   visibility = from.visibility;
-  paths = from.paths;
   return *this;
 }
 
@@ -80,14 +74,14 @@ RequiredInput::RequiredInput() :
 {
 }
 
-RequiredInput::RequiredInput(const QString& inputname, const std::set<qttp::HttpPath>& path) :
-  Input(inputname, path)
+RequiredInput::RequiredInput(const QString& inputname) :
+  Input(inputname)
 {
   isRequired = true;
 }
 
-RequiredInput::RequiredInput(const QString& inputname, const QString& desc, const QStringList& vals, const std::set<qttp::HttpPath>& path) :
-  Input(inputname, desc, vals, path)
+RequiredInput::RequiredInput(const QString& inputname, const QString& desc, const QStringList& vals) :
+  Input(inputname, desc, vals)
 {
   isRequired = true;
 }
@@ -98,14 +92,14 @@ HeaderInput::HeaderInput() :
   paramType = "header";
 }
 
-HeaderInput::HeaderInput(const QString& inputname, const std::set<qttp::HttpPath>& path) :
-  Input(inputname, path)
+HeaderInput::HeaderInput(const QString& inputname) :
+  Input(inputname)
 {
   paramType = "header";
 }
 
-HeaderInput::HeaderInput(const QString& inputname, const QString& desc, const QStringList& vals, const std::set<qttp::HttpPath>& path) :
-  Input(inputname, desc, vals, path)
+HeaderInput::HeaderInput(const QString& inputname, const QString& desc, const QStringList& vals) :
+  Input(inputname, desc, vals)
 {
   paramType = "header";
 }
